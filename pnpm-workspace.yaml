@@ -1,0 +1,13 @@
+packages:
+  - vite
+  - parcel
+  - turbo
+  - webpack
+  - esbuild
+
+onlyBuiltDependencies:
+  - '@parcel/watcher'
+  - '@swc/core'
+  - esbuild
+  - lmdb
+  - msgpackr-extract

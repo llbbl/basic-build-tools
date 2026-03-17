@@ -1,0 +1,13 @@
+{
+  "name": "basic-build-tools",
+  "private": true,
+  "scripts": {
+    "dev:vite": "pnpm --filter vite-basic-build dev",
+    "dev:parcel": "pnpm --filter parcel-basic-build dev",
+    "dev:turbo": "pnpm --filter turbo-basic-build dev",
+    "dev:webpack": "pnpm --filter webpack-basic-build dev",
+    "dev:esbuild": "pnpm --filter esbuild-basic-build dev",
+    "build:all": "pnpm -r build",
+    "benchmark": "bun run ./scripts/benchmark.ts"
+  }
+}

@@ -1,10 +1,9 @@
 {
-  "name": "parcel-basic-build",
+  "name": "esbuild-basic-build",
   "version": "1.0.0",
-  "source": "src/index.html",
   "scripts": {
-    "dev": "parcel src/index.html",
-    "build": "parcel build"
+    "dev": "node ./serve.js",
+    "build": "node ./build.js"
   },
   "dependencies": {
     "htm": "^3.1.1",
@@ -12,7 +11,7 @@
   },
   "devDependencies": {
     "autoprefixer": "^10.4.20",
-    "parcel": "^2.12.0",
+    "esbuild": "^0.21.0",
     "postcss": "^8.4.47",
     "tailwindcss": "^3.4.13"
   }

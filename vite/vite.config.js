@@ -1,11 +1,13 @@
-export default {
-  root: './src', // Set the root directory for your source code
+import { defineConfig } from 'vite';
+
+export default defineConfig({
+  root: './src',
   build: {
-    outDir: 'dist', // Output directory for built assets
+    outDir: '../dist',
+    emptyOutDir: true,
   },
   esbuild: {
     jsxFactory: 'h',
     jsxFragment: 'Fragment',
-    loader: { '.js': 'jsx' }
-  }
-}
+  },
+});
