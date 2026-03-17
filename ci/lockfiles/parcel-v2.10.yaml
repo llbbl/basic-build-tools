@@ -43,7 +43,7 @@ importers:
         specifier: ^10.4.20
         version: 10.4.27(postcss@8.5.8)
       parcel:
-        specifier: ^2.12.0
+        specifier: ^2.10
         version: 2.16.4(@swc/helpers@0.5.19)
       postcss:
         specifier: ^8.4.47

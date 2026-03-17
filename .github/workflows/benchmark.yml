@@ -23,10 +23,14 @@ jobs:
         with:
           node-version: 22
           cache: 'pnpm'
+      - name: Use version-specific lockfile
+        run: cp ci/lockfiles/vite-v${{ matrix.version }}.yaml pnpm-lock.yaml
+      - name: Override Vite version in package.json
+        run: |
+          cd vite
+          jq '.devDependencies.vite = "^${{ matrix.version }}"' package.json > tmp.json && mv tmp.json package.json
       - name: Install dependencies
-        run: pnpm install
-      - name: Override Vite version
-        run: pnpm --filter vite-basic-build add -D vite@${{ matrix.version }}
+        run: pnpm install --frozen-lockfile
       - name: Build
         run: pnpm --filter vite-basic-build build
       - name: Install hyperfine
@@ -61,10 +65,14 @@ jobs:
         with:
           node-version: 22
           cache: 'pnpm'
+      - name: Use version-specific lockfile
+        run: cp ci/lockfiles/parcel-v${{ matrix.version }}.yaml pnpm-lock.yaml
+      - name: Override Parcel version in package.json
+        run: |
+          cd parcel
+          jq '.devDependencies.parcel = "^${{ matrix.version }}"' package.json > tmp.json && mv tmp.json package.json
       - name: Install dependencies
-        run: pnpm install
-      - name: Override Parcel version
-        run: pnpm --filter parcel-basic-build add -D parcel@${{ matrix.version }}
+        run: pnpm install --frozen-lockfile
       - name: Build
         run: pnpm --filter parcel-basic-build build
       - name: Install hyperfine
@@ -94,7 +102,7 @@ jobs:
           node-version: 22
           cache: 'pnpm'
       - name: Install dependencies
-        run: pnpm install
+        run: pnpm install --frozen-lockfile
       - name: Build
         run: pnpm --filter webpack-basic-build build
       - name: Install hyperfine
@@ -129,10 +137,14 @@ jobs:
         with:
           node-version: 22
           cache: 'pnpm'
+      - name: Use version-specific lockfile
+        run: cp ci/lockfiles/esbuild-v${{ matrix.version }}.yaml pnpm-lock.yaml
+      - name: Override esbuild version in package.json
+        run: |
+          cd esbuild
+          jq '.devDependencies.esbuild = "^${{ matrix.version }}"' package.json > tmp.json && mv tmp.json package.json
       - name: Install dependencies
-        run: pnpm install
-      - name: Override esbuild version
-        run: pnpm --filter esbuild-basic-build add -D esbuild@${{ matrix.version }}
+        run: pnpm install --frozen-lockfile
       - name: Build
         run: pnpm --filter esbuild-basic-build build
       - name: Install hyperfine
@@ -158,7 +170,7 @@ jobs:
           node-version: 22
           cache: 'pnpm'
       - name: Install dependencies
-        run: pnpm install
+        run: pnpm install --frozen-lockfile
       - name: Build
         run: pnpm --filter turbo-basic-build build
       - name: Install hyperfine

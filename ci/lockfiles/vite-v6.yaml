@@ -114,7 +114,7 @@ importers:
         specifier: ^3.4.13
         version: 3.4.19
       vite:
-        specifier: ^6.0.0
+        specifier: ^6
         version: 6.4.1(@types/node@25.5.0)(jiti@2.6.1)(lightningcss@1.32.0)(terser@5.46.1)
 
   webpack:

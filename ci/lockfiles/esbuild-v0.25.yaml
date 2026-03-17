@@ -21,7 +21,7 @@ importers:
         specifier: ^10.4.20
         version: 10.4.27(postcss@8.5.8)
       esbuild:
-        specifier: ^0.25.0
+        specifier: ^0.25
         version: 0.25.12
       postcss:
         specifier: ^8.4.47
