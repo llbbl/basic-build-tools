@@ -31,23 +31,39 @@ jobs:
           jq '.devDependencies.vite = "^${{ matrix.version }}"' package.json > tmp.json && mv tmp.json package.json
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
-      - name: Build
-        run: pnpm --filter vite-basic-build build
       - name: Install hyperfine
         run: sudo apt-get install -y hyperfine
       - name: Benchmark cold build
         run: |
           rm -rf vite/dist
-          hyperfine --warmup 0 --runs 5 --export-markdown /tmp/bench.md \
+          hyperfine --warmup 0 --runs 5 --export-json /tmp/bench.json \
             "pnpm --filter vite-basic-build build"
-          echo "### Vite v${{ matrix.version }} Benchmark" >> $GITHUB_STEP_SUMMARY
-          cat /tmp/bench.md >> $GITHUB_STEP_SUMMARY
-      - name: Report bundle size
+      - name: Collect results
         run: |
-          echo "### Bundle Size" >> $GITHUB_STEP_SUMMARY
-          echo '```' >> $GITHUB_STEP_SUMMARY
-          find vite/dist -name "*.js" -o -name "*.css" | xargs ls -lh 2>/dev/null || echo "No output files"
-          echo '```' >> $GITHUB_STEP_SUMMARY
+          MEAN=$(jq '.results[0].mean' /tmp/bench.json)
+          STDDEV=$(jq '.results[0].stddev' /tmp/bench.json)
+          pnpm --filter vite-basic-build build 2>&1
+          JS_SIZE=$(find vite/dist -name "*.js" -exec stat -c%s {} + 2>/dev/null | awk '{s+=$1}END{print s+0}')
+          CSS_SIZE=$(find vite/dist -name "*.css" -exec stat -c%s {} + 2>/dev/null | awk '{s+=$1}END{print s+0}')
+          JS_GZIP=$(find vite/dist -name "*.js" -exec gzip -c {} \; 2>/dev/null | wc -c)
+          CSS_GZIP=$(find vite/dist -name "*.css" -exec gzip -c {} \; 2>/dev/null | wc -c)
+          mkdir -p /tmp/results
+          cat > /tmp/results/result.json <<EOF
+          {
+            "tool": "Vite",
+            "version": "${{ matrix.version }}",
+            "build_time_s": $MEAN,
+            "build_time_stddev": $STDDEV,
+            "js_bytes": $JS_SIZE,
+            "css_bytes": $CSS_SIZE,
+            "js_gzip": $JS_GZIP,
+            "css_gzip": $CSS_GZIP
+          }
+          EOF
+      - uses: actions/upload-artifact@v4
+        with:
+          name: bench-vite-v${{ matrix.version }}
+          path: /tmp/results/result.json
 
   benchmark-parcel:
     name: Parcel v${{ matrix.version }}
@@ -73,17 +89,40 @@ jobs:
           jq '.devDependencies.parcel = "^${{ matrix.version }}"' package.json > tmp.json && mv tmp.json package.json
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
-      - name: Build
-        run: pnpm --filter parcel-basic-build build
       - name: Install hyperfine
         run: sudo apt-get install -y hyperfine
       - name: Benchmark cold build
         run: |
           rm -rf parcel/dist parcel/.parcel-cache
-          hyperfine --warmup 0 --runs 5 --export-markdown /tmp/bench.md \
+          hyperfine --warmup 0 --runs 5 --export-json /tmp/bench.json \
             "pnpm --filter parcel-basic-build build"
-          echo "### Parcel v${{ matrix.version }} Benchmark" >> $GITHUB_STEP_SUMMARY
-          cat /tmp/bench.md >> $GITHUB_STEP_SUMMARY
+      - name: Collect results
+        run: |
+          MEAN=$(jq '.results[0].mean' /tmp/bench.json)
+          STDDEV=$(jq '.results[0].stddev' /tmp/bench.json)
+          rm -rf parcel/dist parcel/.parcel-cache
+          pnpm --filter parcel-basic-build build 2>&1
+          JS_SIZE=$(find parcel/dist -name "*.js" -exec stat -c%s {} + 2>/dev/null | awk '{s+=$1}END{print s+0}')
+          CSS_SIZE=$(find parcel/dist -name "*.css" -exec stat -c%s {} + 2>/dev/null | awk '{s+=$1}END{print s+0}')
+          JS_GZIP=$(find parcel/dist -name "*.js" -exec gzip -c {} \; 2>/dev/null | wc -c)
+          CSS_GZIP=$(find parcel/dist -name "*.css" -exec gzip -c {} \; 2>/dev/null | wc -c)
+          mkdir -p /tmp/results
+          cat > /tmp/results/result.json <<EOF
+          {
+            "tool": "Parcel",
+            "version": "${{ matrix.version }}",
+            "build_time_s": $MEAN,
+            "build_time_stddev": $STDDEV,
+            "js_bytes": $JS_SIZE,
+            "css_bytes": $CSS_SIZE,
+            "js_gzip": $JS_GZIP,
+            "css_gzip": $CSS_GZIP
+          }
+          EOF
+      - uses: actions/upload-artifact@v4
+        with:
+          name: bench-parcel-v${{ matrix.version }}
+          path: /tmp/results/result.json
 
   benchmark-webpack:
     name: Webpack v${{ matrix.version }}
@@ -103,23 +142,39 @@ jobs:
           cache: 'pnpm'
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
-      - name: Build
-        run: pnpm --filter webpack-basic-build build
       - name: Install hyperfine
         run: sudo apt-get install -y hyperfine
       - name: Benchmark cold build
         run: |
           rm -rf webpack/dist
-          hyperfine --warmup 0 --runs 5 --export-markdown /tmp/bench.md \
+          hyperfine --warmup 0 --runs 5 --export-json /tmp/bench.json \
             "pnpm --filter webpack-basic-build build"
-          echo "### Webpack v${{ matrix.version }} Benchmark" >> $GITHUB_STEP_SUMMARY
-          cat /tmp/bench.md >> $GITHUB_STEP_SUMMARY
-      - name: Report bundle size
+      - name: Collect results
         run: |
-          echo "### Bundle Size" >> $GITHUB_STEP_SUMMARY
-          echo '```' >> $GITHUB_STEP_SUMMARY
-          find webpack/dist -name "*.js" -o -name "*.css" | xargs ls -lh 2>/dev/null || echo "No output files"
-          echo '```' >> $GITHUB_STEP_SUMMARY
+          MEAN=$(jq '.results[0].mean' /tmp/bench.json)
+          STDDEV=$(jq '.results[0].stddev' /tmp/bench.json)
+          pnpm --filter webpack-basic-build build 2>&1
+          JS_SIZE=$(find webpack/dist -name "*.js" -exec stat -c%s {} + 2>/dev/null | awk '{s+=$1}END{print s+0}')
+          CSS_SIZE=$(find webpack/dist -name "*.css" -exec stat -c%s {} + 2>/dev/null | awk '{s+=$1}END{print s+0}')
+          JS_GZIP=$(find webpack/dist -name "*.js" -exec gzip -c {} \; 2>/dev/null | wc -c)
+          CSS_GZIP=$(find webpack/dist -name "*.css" -exec gzip -c {} \; 2>/dev/null | wc -c)
+          mkdir -p /tmp/results
+          cat > /tmp/results/result.json <<EOF
+          {
+            "tool": "Webpack",
+            "version": "${{ matrix.version }}",
+            "build_time_s": $MEAN,
+            "build_time_stddev": $STDDEV,
+            "js_bytes": $JS_SIZE,
+            "css_bytes": $CSS_SIZE,
+            "js_gzip": $JS_GZIP,
+            "css_gzip": $CSS_GZIP
+          }
+          EOF
+      - uses: actions/upload-artifact@v4
+        with:
+          name: bench-webpack-v${{ matrix.version }}
+          path: /tmp/results/result.json
 
   benchmark-esbuild:
     name: esbuild v${{ matrix.version }}
@@ -145,17 +200,39 @@ jobs:
           jq '.devDependencies.esbuild = "^${{ matrix.version }}"' package.json > tmp.json && mv tmp.json package.json
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
-      - name: Build
-        run: pnpm --filter esbuild-basic-build build
       - name: Install hyperfine
         run: sudo apt-get install -y hyperfine
       - name: Benchmark cold build
         run: |
           rm -rf esbuild/dist
-          hyperfine --warmup 0 --runs 5 --export-markdown /tmp/bench.md \
+          hyperfine --warmup 0 --runs 5 --export-json /tmp/bench.json \
             "pnpm --filter esbuild-basic-build build"
-          echo "### esbuild v${{ matrix.version }} Benchmark" >> $GITHUB_STEP_SUMMARY
-          cat /tmp/bench.md >> $GITHUB_STEP_SUMMARY
+      - name: Collect results
+        run: |
+          MEAN=$(jq '.results[0].mean' /tmp/bench.json)
+          STDDEV=$(jq '.results[0].stddev' /tmp/bench.json)
+          pnpm --filter esbuild-basic-build build 2>&1
+          JS_SIZE=$(find esbuild/dist -name "*.js" -exec stat -c%s {} + 2>/dev/null | awk '{s+=$1}END{print s+0}')
+          CSS_SIZE=$(find esbuild/dist -name "*.css" -exec stat -c%s {} + 2>/dev/null | awk '{s+=$1}END{print s+0}')
+          JS_GZIP=$(find esbuild/dist -name "*.js" -exec gzip -c {} \; 2>/dev/null | wc -c)
+          CSS_GZIP=$(find esbuild/dist -name "*.css" -exec gzip -c {} \; 2>/dev/null | wc -c)
+          mkdir -p /tmp/results
+          cat > /tmp/results/result.json <<EOF
+          {
+            "tool": "esbuild",
+            "version": "${{ matrix.version }}",
+            "build_time_s": $MEAN,
+            "build_time_stddev": $STDDEV,
+            "js_bytes": $JS_SIZE,
+            "css_bytes": $CSS_SIZE,
+            "js_gzip": $JS_GZIP,
+            "css_gzip": $CSS_GZIP
+          }
+          EOF
+      - uses: actions/upload-artifact@v4
+        with:
+          name: bench-esbuild-v${{ matrix.version }}
+          path: /tmp/results/result.json
 
   benchmark-turbo:
     name: Turbo + Webpack
@@ -171,14 +248,78 @@ jobs:
           cache: 'pnpm'
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
-      - name: Build
-        run: pnpm --filter turbo-basic-build build
       - name: Install hyperfine
         run: sudo apt-get install -y hyperfine
       - name: Benchmark cold build
         run: |
           rm -rf turbo/dist
-          hyperfine --warmup 0 --runs 5 --export-markdown /tmp/bench.md \
+          hyperfine --warmup 0 --runs 5 --export-json /tmp/bench.json \
             "pnpm --filter turbo-basic-build build"
-          echo "### Turbo + Webpack Benchmark" >> $GITHUB_STEP_SUMMARY
-          cat /tmp/bench.md >> $GITHUB_STEP_SUMMARY
+      - name: Collect results
+        run: |
+          MEAN=$(jq '.results[0].mean' /tmp/bench.json)
+          STDDEV=$(jq '.results[0].stddev' /tmp/bench.json)
+          pnpm --filter turbo-basic-build build 2>&1
+          JS_SIZE=$(find turbo/dist -name "*.js" -exec stat -c%s {} + 2>/dev/null | awk '{s+=$1}END{print s+0}')
+          CSS_SIZE=$(find turbo/dist -name "*.css" -exec stat -c%s {} + 2>/dev/null | awk '{s+=$1}END{print s+0}')
+          JS_GZIP=$(find turbo/dist -name "*.js" -exec gzip -c {} \; 2>/dev/null | wc -c)
+          CSS_GZIP=$(find turbo/dist -name "*.css" -exec gzip -c {} \; 2>/dev/null | wc -c)
+          mkdir -p /tmp/results
+          cat > /tmp/results/result.json <<EOF
+          {
+            "tool": "Turbo+Webpack",
+            "version": "latest",
+            "build_time_s": $MEAN,
+            "build_time_stddev": $STDDEV,
+            "js_bytes": $JS_SIZE,
+            "css_bytes": $CSS_SIZE,
+            "js_gzip": $JS_GZIP,
+            "css_gzip": $CSS_GZIP
+          }
+          EOF
+      - uses: actions/upload-artifact@v4
+        with:
+          name: bench-turbo
+          path: /tmp/results/result.json
+
+  report:
+    name: Benchmark Report
+    needs: [benchmark-vite, benchmark-parcel, benchmark-webpack, benchmark-esbuild, benchmark-turbo]
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: /tmp/bench-results
+          pattern: bench-*
+      - name: Generate report
+        run: |
+          echo "## Build Tool Benchmark Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Tool | Version | Build Time | Std Dev | JS (raw) | JS (gzip) | CSS (raw) | CSS (gzip) |" >> $GITHUB_STEP_SUMMARY
+          echo "|------|---------|-----------|---------|----------|-----------|-----------|------------|" >> $GITHUB_STEP_SUMMARY
+
+          for dir in /tmp/bench-results/bench-*/; do
+            if [ -f "$dir/result.json" ]; then
+              TOOL=$(jq -r '.tool' "$dir/result.json")
+              VERSION=$(jq -r '.version' "$dir/result.json")
+              TIME=$(jq '.build_time_s' "$dir/result.json" | awk '{printf "%.2fs", $1}')
+              STDDEV=$(jq '.build_time_stddev' "$dir/result.json" | awk '{printf "%.3fs", $1}')
+              JS=$(jq '.js_bytes' "$dir/result.json" | awk '{printf "%.1fKB", $1/1024}')
+              JS_GZ=$(jq '.js_gzip' "$dir/result.json" | awk '{printf "%.1fKB", $1/1024}')
+              CSS=$(jq '.css_bytes' "$dir/result.json" | awk '{printf "%.1fKB", $1/1024}')
+              CSS_GZ=$(jq '.css_gzip' "$dir/result.json" | awk '{printf "%.1fKB", $1/1024}')
+              echo "| $TOOL | v$VERSION | $TIME | ±$STDDEV | $JS | $JS_GZ | $CSS | $CSS_GZ |" >> $GITHUB_STEP_SUMMARY
+            fi
+          done
+
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "*Measured with [hyperfine](https://github.com/sharkdp/hyperfine) (5 runs, mean). Ubuntu runner, Node 22.*" >> $GITHUB_STEP_SUMMARY
+
+      - name: Save report as artifact
+        run: cp $GITHUB_STEP_SUMMARY /tmp/benchmark-report.md 2>/dev/null || true
+      - uses: actions/upload-artifact@v4
+        with:
+          name: benchmark-report
+          path: /tmp/benchmark-report.md
+          if-no-files-found: ignore
