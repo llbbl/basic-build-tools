@@ -18,6 +18,8 @@ Choosing a build tool is one of the first decisions in any frontend project. Thi
 
 ## Getting Started
 
+The Webpack and Turbo dev servers require Node.js 22.15.0 or newer.
+
 ```bash
 # Install all dependencies
 pnpm install
